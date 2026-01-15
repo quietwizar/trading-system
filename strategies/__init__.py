@@ -6,7 +6,13 @@ import inspect
 from typing import Dict, Type
 
 from . import strategy_base
-from .strategy_base import MovingAverageStrategy, Strategy, TemplateStrategy
+from .strategy_base import (
+    CryptoTrendStrategy,
+    DemoStrategy,
+    MovingAverageStrategy,
+    Strategy,
+    TemplateStrategy,
+)
 
 
 def _build_registry() -> Dict[str, Type[Strategy]]:
@@ -21,6 +27,11 @@ def _build_registry() -> Dict[str, Type[Strategy]]:
     registry.setdefault("moving_average", MovingAverageStrategy)
     registry.setdefault("template", TemplateStrategy)
     registry.setdefault("student", TemplateStrategy)
+    registry.setdefault("crypto", CryptoTrendStrategy)
+    registry.setdefault("crypto_trend", CryptoTrendStrategy)
+    registry.setdefault("crypto_trend_ema", CryptoTrendStrategy)
+    registry.setdefault("demo", DemoStrategy)
+    registry.setdefault("fast", DemoStrategy)
     return registry
 
 
@@ -45,6 +56,8 @@ __all__ = [
     "Strategy",
     "TemplateStrategy",
     "MovingAverageStrategy",
+    "CryptoTrendStrategy",
+    "DemoStrategy",
     "get_strategy_class",
     "list_strategies",
 ]

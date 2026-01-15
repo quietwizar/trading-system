@@ -1,92 +1,168 @@
 # Trading System
+
 ## What this includes
-- Alpaca paper-data download + cleaning helpers.
-- A paper-trading runner that submits orders through Alpaca.
-- A lightweight backtester with a market data gateway, order book, order manager,
-  and matching engine (offline only).
-- Two strategies only:
-  - TemplateStrategy: a starter template to customize.
-  - MovingAverageStrategy: a simple moving average crossover baseline.
+- Alpaca paper-data download + cleaning helpers
+- A paper-trading runner that submits orders through Alpaca
+- A lightweight backtester with market data gateway, order book, order manager, and matching engine
+- Automatic trade logging to `logs/trades.csv` and `logs/system.log`
+- Built-in strategies:
+  - **MovingAverageStrategy** (`ma`) - Simple moving average crossover
+  - **TemplateStrategy** (`template`) - Momentum-based starter template
+  - **CryptoTrendStrategy** (`crypto_trend`) - EMA trend follower for crypto (long-only)
 
-## Accessing Alpaca
-Reminders:
-   Do not add real money to your Alpaca account.
-   Do not share your API keys.
-   Keep it simple if you're short on time.
+## Quick Start
 
-1. Sign up at alpaca.markets.
-   Complete identity verification and confirm your email. 
-2. Configure the paper trading option. Your starting equity should be $1,000,000.
-3. Obtain your API Key ID and Secret Key at https://app.alpaca.markets/dashboard/overview 
-   by scrolling down and looking at the right side of the screen. Generate the endpoint, key, and secret.
-4. Retrieve Market Data
-
-In your terminal, install Alpaca SDK:
-
+### 1. Install dependencies
 ```bash
-pip install alpaca-trade-api
-```
-Sample usage:
-```python
-import alpaca_trade_api as tradeapi
-
-api = tradeapi.REST('your_api_key', 'your_api_secret', 'https://paper-api.alpaca.markets')
-
-bars = api.get_bars('AAPL', '1Min', limit=1).df
-```
-   Review Alpaca's API docs and GitHub for more endpoints.
-
-5. Save Market Data via flat files CSV, Pickle, OR parquet.
-
-## Run modes
-
-Backtest (offline CSV):
-```
-python run_backtest.py --csv data/AAPL_1Min_stock_alpaca_clean.csv --strategy ma
-```
-To run your strategy, replace `ma` with `template` or your class name.
-
-Live paper trading (Alpaca):
-```
-python run_live.py --symbol AAPL --asset-class stock --strategy ma --timeframe 1Min --live
-```
-
-## Quick start (Alpaca paper trading)
-0) Clone this repository by using an IDE (VS Code, Cursor) and running in powershell / terminal:
-```bash
-git clone https://github.com/Maroon-Capital-Trading-Project/Trading-System.git
-git pull
-```
-Alternatively, you can use Github Desktop for a user-friendly interface.
-
-1) Install dependencies:
-```
 pip install -r requirements.txt
 ```
-2) Create a `.env` file in the project root:
+
+### 2. Create `.env` file (only 2 fields required!)
 ```
 ALPACA_API_KEY=your_key_here
 ALPACA_API_SECRET=your_secret_here
-ALPACA_API_URL=https://paper-api.alpaca.markets
-ALPACA_DATA_FEED=iex
-```
-The scripts load this file automatically.
-ALPACA_DATA_FEED is optional and applies to stock data.
-3) Run the paper-trading loop:
-```
-python run_live.py --symbol AAPL --asset-class stock --strategy ma --timeframe 1Min
 ```
 
-You will see trade-by-trade output in the terminal, followed by a summary.
-Use `--save-data` to write raw and cleaned CSVs to `data/`.
-Use `--dry-run` to preview decisions without placing orders.
-For crypto, use symbols like `BTCUSD` with `--asset-class crypto`.
-This script submits paper orders to Alpaca.
-To run continuously, add `--live` and stop with Ctrl+C.
-
-Optional local smoke test (synthetic data):
+### 3. Run live trading
+```bash
+python run_live.py --symbol AAPL --strategy ma --live
 ```
-python test_system.py
+
+Press `Ctrl+C` to stop and see performance summary (P&L, Sharpe ratio, win rate, etc.)
+
+---
+
+## Available Timeframes
+
+| Timeframe | Description | Best For |
+|-----------|-------------|----------|
+| `1Min` | 1-minute bars | High-frequency, intraday trading |
+| `5Min` | 5-minute bars | Short-term intraday |
+| `15Min` | 15-minute bars | Intraday swing |
+| `30Min` | 30-minute bars | Intraday swing |
+| `1Hour` | 1-hour bars | Intraday/multi-day |
+| `1Day` | Daily bars | Swing/position trading |
+
+**Example usage:**
+```bash
+# Fast trading with 1-minute bars, checking every 5 seconds
+python run_live.py --symbol AAPL --strategy ma --timeframe 1Min --sleep 5 --live
+
+# Daily strategy
+python run_live.py --symbol AAPL --strategy ma --timeframe 1Day --live
+```
+
+**Note:** Alpaca's minimum bar resolution is 1 minute. The `--sleep` parameter controls how often we check for new signals (can be as low as 1 second).
+
+---
+
+## CLI Reference
+
+### List available strategies
+```bash
+python run_live.py --list-strategies
+```
+
+### Live trading
+```bash
+python run_live.py --symbol AAPL --strategy ma --live
+```
+
+### Dry run (no real orders)
+```bash
+python run_live.py --symbol AAPL --strategy ma --dry-run --iterations 10
+```
+
+### Crypto trading
+```bash
+python run_live.py --symbol BTCUSD --asset-class crypto --strategy crypto_trend --live
+```
+
+### Fast demo mode (check every 5 seconds)
+```bash
+python run_live.py --symbol AAPL --strategy template --timeframe 1Min --sleep 5 --live
+```
+
+### All options
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--symbol` | AAPL | Stock ticker or crypto symbol |
+| `--asset-class` | stock | `stock` or `crypto` |
+| `--strategy` | ma | Strategy name |
+| `--timeframe` | 1Min | Bar timeframe |
+| `--sleep` | 60 | Seconds between iterations |
+| `--position-size` | 10.0 | Shares (stocks) or USD (crypto) per trade |
+| `--live` | false | Run continuously until Ctrl+C |
+| `--dry-run` | false | Print decisions without placing orders |
+| `--save-data` | false | Save market data to CSV |
+
+---
+
+## Backtest Mode
+
+```bash
+python run_backtest.py --csv data/AAPL_1Min_stock_alpaca_clean.csv --strategy ma --plot
+```
+
+---
+
+## Build Your Own Strategy
+
+Edit `strategies/strategy_base.py` and add your class:
+
+```python
+class MyStrategy(Strategy):
+    def __init__(self, lookback=20, position_size=10.0):
+        self.lookback = lookback
+        self.position_size = position_size
+
+    def add_indicators(self, df):
+        df['sma'] = df['Close'].rolling(self.lookback).mean()
+        return df
+
+    def generate_signals(self, df):
+        df['signal'] = 0
+        df.loc[df['Close'] > df['sma'], 'signal'] = 1
+        df.loc[df['Close'] < df['sma'], 'signal'] = -1
+        df['position'] = df['signal']
+        df['target_qty'] = self.position_size
+        return df
+```
+
+Then run:
+```bash
+python run_live.py --symbol AAPL --strategy mystrategy --live
+```
+
+---
+
+## Logs and Output
+
+All trades are logged to:
+- `logs/trades.csv` - Trade records (timestamp, symbol, side, qty, price, P&L)
+- `logs/system.log` - Full system log with debug info
+
+When you stop with `Ctrl+C`, you'll see a performance summary:
+```
+SESSION SUMMARY
+  Trades: 15 | Wins: 9 (60.0%)
+  Net P&L: $+127.50
+  Sharpe Ratio: 1.23
+  Volatility: 0.82%
+```
+
+---
+
+## Project Structure
+```
+trading-system/
+  core/           # Trading engine, logger
+  pipeline/       # Alpaca data helpers
+  strategies/     # Strategy implementations
+  logs/           # Trade logs (auto-created)
+  data/           # Market data CSVs
+  run_live.py     # Live trading CLI
+  run_backtest.py # Backtesting CLI
 ```
 
 ## Fetch data with Alpaca

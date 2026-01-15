@@ -26,7 +26,17 @@ def _ensure_dir(path: Path) -> Path:
 
 
 def _load_env() -> None:
-    load_dotenv(override=False)
+    env_paths = [
+        Path.cwd() / ".env",
+        Path(__file__).resolve().parents[1] / ".env",
+    ]
+    loaded = False
+    for path in env_paths:
+        if path.exists():
+            load_dotenv(path, override=False)
+            loaded = True
+    if not loaded:
+        load_dotenv(override=False)
 
 
 def _require_env(name: str) -> str:
@@ -54,7 +64,9 @@ def get_rest() -> tradeapi.REST:
     _load_env()
     api_key = _require_env("ALPACA_API_KEY")
     api_secret = _require_env("ALPACA_API_SECRET")
-    base_url = os.environ.get("ALPACA_API_URL", DEFAULT_BASE_URL)
+    base_url = os.environ.get("ALPACA_API_URL", DEFAULT_BASE_URL).rstrip("/")
+    if not base_url:
+        base_url = DEFAULT_BASE_URL
     return tradeapi.REST(api_key, api_secret, base_url, api_version="v2")
 
 
