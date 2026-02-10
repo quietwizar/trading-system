@@ -3,9 +3,9 @@ import pandas as pd
 from pipeline.alpaca import get_rest, save_bars, clean_market_data, _parse_timeframe, _normalize_bars, _to_rfc3339
 
 api = get_rest()
-start = pd.Timestamp("2025-07-01", tz="UTC")
+start = pd.Timestamp("2024-01-01", tz="UTC")
 end = pd.Timestamp("2026-02-10", tz="UTC")
-timeframe = "5Min"
+timeframe = "1Hour"
 
 print(f"Downloading {timeframe} data from {start.date()} to {end.date()}")
 
@@ -25,4 +25,4 @@ rsp_raw = save_bars(rsp_df, "RSP", timeframe, "stock")
 rsp_clean = clean_market_data(rsp_raw)
 print(f"Saved to: {rsp_clean}")
 
-print(f"\n✅ {timeframe} download complete!")
+print(f"\n✅ Full 2024-2025 {timeframe} download complete!")
